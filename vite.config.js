@@ -5,9 +5,10 @@ import path from 'path'
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
+  base: "/SwapperUI/",
   resolve: {
     alias: {
-      '@': path.resolve('./src') // 假设你的根目录是 src
+      '@': path.resolve('./src')
     }
   }
 })
