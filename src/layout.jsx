@@ -16,8 +16,8 @@ export const useWebSocketContext = () => {
 };
 //'wss://echo.websocket.org
 export default function Layout() {
-    const [socketUrl, setSocketUrl] = useState('ws://localhost:18000');
-    const [urlInput, setUrlInput] = useState('ws://localhost:18000');
+    const [socketUrl, setSocketUrl] = useState('ws://' + window.location.hostname +':18000');
+    const [urlInput, setUrlInput] = useState('ws://' + window.location.hostname  +':18000');
     const { sendMessage, lastMessage, readyState } = useWebSocket(socketUrl, {
         shouldReconnect: () => true,
         reconnectAttempts: 10,
