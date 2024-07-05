@@ -16,8 +16,9 @@ export const useWebSocketContext = () => {
 };
 //'wss://echo.websocket.org
 export default function Layout() {
-    const [socketUrl, setSocketUrl] = useState('ws://' + window.location.hostname +':18000');
-    const [urlInput, setUrlInput] = useState('ws://' + window.location.hostname  +':18000');
+    const defaultUrl = 'ws://' + window.location.hostname +':18000';
+    const [socketUrl, setSocketUrl] = useState(defaultUrl);
+    const [urlInput, setUrlInput] = useState(defaultUrl);
     const { sendMessage, lastMessage, readyState } = useWebSocket(socketUrl, {
         shouldReconnect: () => true,
         reconnectAttempts: 10,
@@ -51,7 +52,7 @@ export default function Layout() {
         <div>
             <div className='m-2 flex items-end gap-3'>
                 <div>
-                    <Input className='w-[400px]' defaultValue='ws://localhost:18000' onChange={setUrlInput}></Input>
+                    <Input className='w-[400px]' defaultValue={defaultUrl} onChange={setUrlInput}></Input>
                 </div>
                 <div>
                     <Button onPress={()=>{
