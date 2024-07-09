@@ -8,10 +8,7 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 
 const defultCode = `{
-    //// if ASM, use return ↓
-    // return java.util.UUID.randomUUID().toString();
-
-    //// if Javassist, use $_ ↓
+    // args: $1 $2 $3, returnVal: $_ 
     // $_ = java.util.UUID.randomUUID().toString();
 }`
 
