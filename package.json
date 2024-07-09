@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@monaco-editor/react": "^4.6.0",
-    "@sunwu51/camel-ui": "^0.0.2",
+    "@sunwu51/camel-ui": "^0.0.3",
     "@tanstack/react-form": "^0.25.0",
     "codemirror": "^5.65.16",
     "moment": "^2.30.1",
