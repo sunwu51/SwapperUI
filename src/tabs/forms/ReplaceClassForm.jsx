@@ -101,9 +101,9 @@ export function DecompileForm() {
         },
     })
    
-    return <TabPanelItem title="ReplaceClass" open={true}>
+    return <TabPanelItem title="Decompile" open={true}>
         <div className="my-4 mx-2">
-            <p>Upload a .class file to hot swap the origin class in jvm</p>
+            <p>Input a className to decompile</p>
         </div>
         <div className="my-4 mx-2">
             <form
@@ -123,7 +123,7 @@ export function DecompileForm() {
                                     name={field.name}
                                     onBlur={field.handleBlur}
                                     onChange={(v) => field.handleChange(v)}
-                                    label="Input the class signature (package.ClassName)"
+                                    label="Class name (package.ClassName)"
                                 ></Input>
                                 {field.state.meta.errors ? (
                                     <em role="alert" className="text-[var(--w-red)]">{field.state.meta.errors.join(', ')}</em>
