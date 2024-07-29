@@ -4,7 +4,7 @@ import ChangeBody from './tabs/ChangeBody';
 import Execute from './tabs/Execute';
 import ReplaceClass from './tabs/ReplaceClass';
 import useWebSocket, { ReadyState } from 'react-use-websocket';
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import LogContent from './logs/LogContent';
 import toast, { Toaster } from 'react-hot-toast';
 
@@ -38,6 +38,7 @@ export default function Layout() {
         [ReadyState.CLOSED]: 'var(--w-red-dark)',
         [ReadyState.UNINSTANTIATED]: 'var(--w-yello-dark)',
     }[readyState];
+    useEffect(()=>{document.title = 'swapper';})
     return <div>
         <div><Toaster toastOptions={{
             style: {
