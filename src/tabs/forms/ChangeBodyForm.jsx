@@ -99,7 +99,8 @@ export function ChangeBodyForm() {
                                     name={field.name}
                                     onBlur={field.handleBlur}
                                     onChange={(v) => field.handleChange(v)}
-                                    defaultValue={1} label="engine">
+                                    defaultValue={0} label="engine">
+                                    <Radio value={0}>Javassist</Radio>
                                     <Radio value={1}>ASM</Radio>
                                 </RadioGroup>
                             </>

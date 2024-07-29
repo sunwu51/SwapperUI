@@ -84,7 +84,7 @@ export function OuterWatchForm() {
                                 label="PrintFormat" defaultValue={1}>
                                 <Radio value={1}>toString</Radio>
                                 <Radio value={2}>toJson</Radio>
-                                <Radio value={3}>Pretty</Radio>
+                                {/* <Radio value={3}>Pretty</Radio> */}
                             </RadioGroup>)}</form.Field>
                 </div>
                 <Button type="submit">watch</Button>

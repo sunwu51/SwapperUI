@@ -53,7 +53,7 @@ export default function Layout() {
         <div>
             <div className='m-2 flex items-end gap-3'>
                 <div>
-                    <Input className='w-[400px]' defaultValue={defaultUrl} onChange={setUrlInput}></Input>
+                    <Input className='w-[550px]' defaultValue={defaultUrl} onChange={setUrlInput}></Input>
                 </div>
                 <div>
                     <Button onPress={()=>{
@@ -72,7 +72,7 @@ export default function Layout() {
             }}>
                 <div className='flex flex-row p-2'>
                     <div>
-                        <Tabs className='w-[700px]' tabPanelClassName='min-h-[84vh]'>
+                        <Tabs className='min-w-[700px] max-w-[800px] w-[50vw]' tabPanelClassName='min-h-[84vh]'>
                             <TabsItem title='Watch'>
                                 <Watch />
                             </TabsItem>
