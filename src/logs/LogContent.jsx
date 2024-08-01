@@ -61,7 +61,7 @@ export default function LogContent() {
             scrollToBottom();
         });
 
-        // // Listen for editor layout changes and fold all code blocks after the layout
+        // Listen for editor layout changes and fold all code blocks after the layout
         editor.onDidLayoutChange(() => {
         });
     };
