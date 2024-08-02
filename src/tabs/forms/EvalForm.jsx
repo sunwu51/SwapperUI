@@ -42,7 +42,7 @@ export function EvalForm() {
     if (editorRef.current != null) {
       if (keyDownRef.current!= null) keyDownRef.current.dispose();
       keyDownRef.current = editorRef.current.onKeyDown((event) => {
-        if ((event.metaKey || event.altKey) && event.code === 'Enter') {
+        if ((event.ctrlKey || event.metaKey) && event.code === 'Enter') {
           event.preventDefault();
           submit();
         }
