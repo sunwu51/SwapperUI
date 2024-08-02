@@ -42,7 +42,7 @@ export function EvalForm() {
     if (editorRef.current != null) {
       if (keyDownRef.current!= null) keyDownRef.current.dispose();
       keyDownRef.current = editorRef.current.onKeyDown((event) => {
-        if ((event.ctrlKey || event.altKey) && event.code === 'Enter') {
+        if ((event.metaKey || event.altKey) && event.code === 'Enter') {
           event.preventDefault();
           submit();
         }
@@ -66,7 +66,7 @@ export function EvalForm() {
           onMount={handleEditorDidMount}
           value={code}
           onChange={setCode}
-          options={{ wordWrap: true, fontSize: 18 }}
+          options={{ wordWrap: true, fontSize: 12 }}
           theme="vs-dark" />
       </div>
       <Button onPress={submit} className="bg-[var(--w-yellow)] hover:bg-[var(--w-yellow-dark)] hover:text-white">Eval</Button>
