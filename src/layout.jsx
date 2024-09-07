@@ -44,6 +44,7 @@ export default function Layout() {
             method: 'POST'
         }).then(res=>res.text()).then(port=>{
             if (parseInt(port) > 0) {
+                setUrlInput('ws://' + window.location.hostname + ':' + port);
                 setSocketUrl('ws://' + window.location.hostname + ':' + port);
             }
         })
