@@ -38,7 +38,16 @@ export default function Layout() {
         [ReadyState.CLOSED]: 'var(--w-red-dark)',
         [ReadyState.UNINSTANTIATED]: 'var(--w-yello-dark)',
     }[readyState];
-    useEffect(()=>{document.title = 'swapper';})
+    useEffect(()=>{
+        document.title = 'swapper';
+        fetch("/wsPort", {
+            method: 'POST'
+        }).then(res=>res.text()).then(port=>{
+            if (parseInt(port) > 0) {
+                setSocketUrl('ws://' + window.location.hostname + ':' + port);
+            }
+        })
+    }, [])
     return <div>
         <div><Toaster toastOptions={{
             style: {
