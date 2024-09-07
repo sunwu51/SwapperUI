@@ -63,7 +63,7 @@ export default function Layout() {
         <div>
             <div className='m-2 flex items-end gap-3'>
                 <div>
-                    <Input className='w-[550px]' defaultValue={defaultUrl} onChange={setUrlInput}></Input>
+                    <Input value={urlInput} className='w-[550px]' defaultValue={defaultUrl} onChange={setUrlInput} aria-label='urlInput'></Input>
                 </div>
                 <div>
                     <Button onPress={()=>{
