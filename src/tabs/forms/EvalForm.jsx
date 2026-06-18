@@ -1,4 +1,4 @@
-import { Button, Radio, RadioGroup } from "@sunwu51/camel-ui";
+import { Button } from "@sunwu51/camel-ui";
 import { TabPanelItem } from "@/tabs/Common";
 import { Editor } from "@monaco-editor/react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -8,7 +8,6 @@ import { ReadyState } from "@/layout";
 import toast from "react-hot-toast";
 
 export function EvalForm() {
-  const [eng, setEng] = useState("groovy");
   const [code, setCode] = useState("");
   const [cmdHis, setHis] = useState([]);
   const [hisPos, setHisPos] = useState(-1);
@@ -28,7 +27,6 @@ export function EvalForm() {
       timestamp: new Date().getTime(),
       type: "EVAL",
       body: code,
-      engine: eng
     }
     if (readyState == ReadyState.OPEN) {
       sendMessage(JSON.stringify(data))
@@ -88,15 +86,8 @@ export function EvalForm() {
       <p>If a command starts with &apos;!&apos;, it&apos;s interpreted by the shell; if not, it&apos;s Groovy code.</p>
     </div>
     <div className="my-4 mx-2">
-      <RadioGroup
-              name='engine'
-              onChange={(v) => setEng(v)}
-              defaultValue={'groovy'} label="engine">
-              <Radio value={'groovy'}>groovy</Radio>
-              <Radio value={'kotlin'}>kotlin</Radio>
-      </RadioGroup>
       <div className="my-2 text-[1rem]">
-        <Editor height="100px" defaultLanguage="java"
+        <Editor height="200px" defaultLanguage="java"
           onMount={handleEditorDidMount}
           value={code}
           onChange={setCode}

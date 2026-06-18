@@ -1,38 +1,38 @@
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { useWebSocketContext } from "../layout";
 import { Editor } from "@monaco-editor/react";
 import { Button, Input } from "@sunwu51/camel-ui";
 import { genTraceId } from "../tabs/Common";
 
 export default function Effected() {
-    const { sendMessage, lastMessage } = useWebSocketContext();
+    const { sendMessage } = useWebSocketContext();
     const [UUID, setUUID] = useState('');
-    const [effectedClasses, setEffectedClasses] = useState("{}");
-    // ping
-    useEffect(() => {
-        sendMessage(JSON.stringify({ id: "_", type: "PING" }))
-        let timer = setInterval(() => sendMessage(JSON.stringify({ id: "_", type: "PING" })), 2000);
-        return () => clearInterval(timer)
-    }, []);
+    const [effectedClasses, setEffectedClasses] = useState({});
 
-    // pong effected class metadata
-    useEffect(() => {
-        if (lastMessage != null && lastMessage.data != null) {
-            let json = JSON.parse(lastMessage.data)
-            if (json.content != null && json.type == 'PONG' && json.content != effectedClasses) {
-                setEffectedClasses(JSON.stringify(json.content));
-            }
+    const refreshEffectedClasses = useCallback(async () => {
+        const response = await sendMessage({ id: "_", type: "PING" });
+        const structuredContent = response?.result?.structuredContent;
+        if (structuredContent?.success) {
+            setEffectedClasses(structuredContent.data || {});
         }
-    },
-        [lastMessage])
+    }, [sendMessage]);
+
+    useEffect(() => {
+        refreshEffectedClasses();
+        let timer = setInterval(refreshEffectedClasses, 2000);
+        return () => clearInterval(timer)
+    }, [refreshEffectedClasses]);
 
     const delByUUID = async () => {
-        sendMessage(JSON.stringify({ id: genTraceId(), timestamp: new Date().getTime(), type: "DELETE", uuid: UUID }));
+        const response = await sendMessage({ id: genTraceId(), timestamp: new Date().getTime(), type: "DELETE", uuid: UUID });
+        if (response?.result?.structuredContent?.success) {
+            refreshEffectedClasses();
+        }
     }
 
     return <div>
         <Editor height="calc(50vh)" defaultLanguage="json" width={'70vw'}
-            value={JSON.stringify(JSON.parse(effectedClasses), 0, 2)}
+            value={JSON.stringify(effectedClasses, null, 2)}
             options={{readOnly: true}}
             theme="vs-dark"
         />

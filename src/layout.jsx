@@ -38,7 +38,9 @@ export default function Layout() {
         eventSource.onopen = () => setReadyState(ReadyState.OPEN);
         eventSource.onerror = () => setReadyState(eventSource.readyState === EventSource.CLOSED ? ReadyState.CLOSED : ReadyState.CONNECTING);
         eventSource.onmessage = (event) => {
-            setLastMessage({ data: event.data });
+            const message = { data: event.data, timestamp: Date.now() };
+            setLastMessage(message);
+            window.dispatchEvent(new CustomEvent('swapper-log-message', { detail: message }));
         };
         return () => {
             setReadyState(ReadyState.CLOSING);
@@ -54,14 +56,16 @@ export default function Layout() {
                 payload = typeof message === 'string' ? JSON.parse(message) : message;
             } catch (e) {
                 toast('request json invalid');
-                return;
+                return null;
             }
 
-            const requestId = payload.id || genRequestId();
+            const requestId = payload.logId || payload.id || genRequestId();
+            const { id: ignoredId, ...payloadWithoutJsonRpcId } = payload;
+            const argumentsPayload = { ...payloadWithoutJsonRpcId, logId: requestId };
             const toolName = messageTypeToToolName(payload.type);
             if (!toolName) {
                 toast(`unsupported message type: ${payload.type}`);
-                return;
+                return null;
             }
 
             try {
@@ -74,29 +78,28 @@ export default function Layout() {
                         method: 'tools/call',
                         params: {
                             name: toolName,
-                            arguments: payload,
+                            arguments: argumentsPayload,
                         },
                     }),
                 });
+                if (!response.ok) {
+                    const text = await response.text();
+                    throw new Error(text || `request failed: ${response.status}`);
+                }
                 const json = await response.json();
                 const structuredContent = json?.result?.structuredContent;
-                if (toolName === 'list_transformers' && structuredContent?.success) {
-                    setLastMessage({
-                        data: JSON.stringify({
-                            type: 'PONG',
-                            id: requestId,
-                            timestamp: Date.now(),
-                            content: structuredContent.data,
-                        }),
-                    });
-                }
+                window.dispatchEvent(new CustomEvent('swapper-mcp-response', {
+                    detail: { requestId, toolName, payload: argumentsPayload, json, structuredContent }
+                }));
                 if (json.error) {
                     toast(json.error.message || 'mcp error');
                 } else if (structuredContent && !structuredContent.success) {
                     toast(structuredContent.message || 'tool failed');
                 }
+                return json;
             } catch (e) {
                 toast(e.message || 'request failed');
+                return null;
             }
         };
     }, [apiBaseUrl]);

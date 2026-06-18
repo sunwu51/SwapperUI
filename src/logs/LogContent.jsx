@@ -11,11 +11,17 @@ export default function LogContent() {
     const [log, setLog] = useState([]);
     const [level, setLevel] = useState(1);
     const logRef = useRef([]);
-    useEffect(() => {
-        if (lastMessage != null && lastMessage.data != null) {
+    const lastMessageKeyRef = useRef(null);
+    const appendLogMessage = (message) => {
+        if (message != null && message.data != null) {
             try {
-                let msg = JSON.parse(lastMessage.data);
-                if (msg.type != 'LOG') {
+                const messageKey = `${message.timestamp || ''}:${message.data}`;
+                if (lastMessageKeyRef.current === messageKey) {
+                    return;
+                }
+                lastMessageKeyRef.current = messageKey;
+                let msg = normalizeLogMessage(message.data);
+                if (msg == null) {
                     return;
                 }
                 logRef.current.push(msg);
@@ -28,7 +34,16 @@ export default function LogContent() {
                 console.warn(e)
             }
         }
+    };
+    useEffect(() => {
+        appendLogMessage(lastMessage);
     }, [lastMessage]);
+
+    useEffect(() => {
+        const onLogMessage = (event) => appendLogMessage(event.detail);
+        window.addEventListener('swapper-log-message', onLogMessage);
+        return () => window.removeEventListener('swapper-log-message', onLogMessage);
+    }, []);
 
     const editorRef = useRef(null);
     const handleEditorDidMount = (editor,) => {
@@ -66,7 +81,21 @@ export default function LogContent() {
         });
     };
     const reset = async () => {
-        sendMessage(JSON.stringify({ id: genTraceId(), timestamp: new Date().getTime(), type: "RESET"}));
+        const id = genTraceId();
+        const response = await sendMessage({ id, timestamp: new Date().getTime(), type: "RESET"});
+        const structuredContent = response?.result?.structuredContent;
+        if (structuredContent != null) {
+            appendLogMessage({
+                timestamp: Date.now(),
+                data: JSON.stringify({
+                    type: 'LOG',
+                    id,
+                    level: structuredContent.success ? 1 : 2,
+                    timestamp: Date.now(),
+                    content: structuredContent.message || JSON.stringify(structuredContent),
+                })
+            });
+        }
     }
 
     return <div className="w-full">
@@ -89,4 +118,39 @@ export default function LogContent() {
         </Card>
     </div>
 
+}
+
+function normalizeLogMessage(data) {
+    let msg = typeof data === 'string' ? JSON.parse(data) : data;
+    if (msg == null) {
+        return null;
+    }
+    if (msg.type === 'LOG' || msg.type === 8) {
+        return {
+            ...msg,
+            type: 'LOG',
+            level: Number.isFinite(Number(msg.level)) ? Number(msg.level) : 1,
+            timestamp: msg.timestamp || Date.now(),
+            content: msg.content == null ? '' : String(msg.content),
+        };
+    }
+    if (msg.result?.structuredContent != null) {
+        return {
+            type: 'LOG',
+            id: msg.id,
+            level: msg.result.structuredContent.success === false ? 2 : 1,
+            timestamp: Date.now(),
+            content: JSON.stringify(msg.result.structuredContent, null, 2),
+        };
+    }
+    if (typeof data === 'string' && data.trim().length > 0) {
+        return {
+            type: 'LOG',
+            id: '',
+            level: 1,
+            timestamp: Date.now(),
+            content: data,
+        };
+    }
+    return null;
 }
