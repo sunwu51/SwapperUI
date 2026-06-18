@@ -4,7 +4,7 @@ import { Editor } from "@monaco-editor/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { genTraceId } from "../Common";
 import { useWebSocketContext } from "../../layout";
-import { ReadyState } from "react-use-websocket";
+import { ReadyState } from "@/layout";
 import toast from "react-hot-toast";
 
 export function EvalForm() {
@@ -40,7 +40,7 @@ export function EvalForm() {
       }, 10)
 
     } else {
-      toast('❗ ws status invalid')
+      toast('❗ http status invalid')
     }
   }, [code, readyState, sendMessage])
 

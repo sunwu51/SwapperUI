@@ -3,27 +3,104 @@ import Watch from './tabs/Watch';
 import ChangeBody from './tabs/ChangeBody';
 import Execute from './tabs/Execute';
 import ReplaceClass from './tabs/ReplaceClass';
-import useWebSocket, { ReadyState } from 'react-use-websocket';
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import LogContent from './logs/LogContent';
 import toast, { Toaster } from 'react-hot-toast';
 
+export const ReadyState = {
+    CONNECTING: 0,
+    OPEN: 1,
+    CLOSING: 2,
+    CLOSED: 3,
+    UNINSTANTIATED: -1,
+};
 
 const WebSocketContext = createContext(null);
 
 export const useWebSocketContext = () => {
     return useContext(WebSocketContext);
 };
-//'wss://echo.websocket.org
+
 export default function Layout() {
-    const defaultUrl = 'ws://' + window.location.hostname +':18000';
-    const [socketUrl, setSocketUrl] = useState(defaultUrl);
+    const defaultUrl = defaultApiBaseUrl();
+    const [apiBaseUrl, setApiBaseUrl] = useState(defaultUrl);
     const [urlInput, setUrlInput] = useState(defaultUrl);
-    const { sendMessage, lastMessage, readyState } = useWebSocket(socketUrl, {
-        shouldReconnect: () => true,
-        reconnectAttempts: 10,
-        reconnectInterval: 10 * 1000,
-    });
+    const [lastMessage, setLastMessage] = useState(null);
+    const [readyState, setReadyState] = useState(ReadyState.CONNECTING);
+
+    useEffect(() => {
+        document.title = 'swapper';
+    }, []);
+
+    useEffect(() => {
+        setReadyState(ReadyState.CONNECTING);
+        const eventSource = new EventSource(normalizeBaseUrl(apiBaseUrl) + '/log');
+        eventSource.onopen = () => setReadyState(ReadyState.OPEN);
+        eventSource.onerror = () => setReadyState(eventSource.readyState === EventSource.CLOSED ? ReadyState.CLOSED : ReadyState.CONNECTING);
+        eventSource.onmessage = (event) => {
+            setLastMessage({ data: event.data });
+        };
+        return () => {
+            setReadyState(ReadyState.CLOSING);
+            eventSource.close();
+            setReadyState(ReadyState.CLOSED);
+        };
+    }, [apiBaseUrl]);
+
+    const sendMessage = useMemo(() => {
+        return async (message) => {
+            let payload;
+            try {
+                payload = typeof message === 'string' ? JSON.parse(message) : message;
+            } catch (e) {
+                toast('request json invalid');
+                return;
+            }
+
+            const requestId = payload.id || genRequestId();
+            const toolName = messageTypeToToolName(payload.type);
+            if (!toolName) {
+                toast(`unsupported message type: ${payload.type}`);
+                return;
+            }
+
+            try {
+                const response = await fetch(normalizeBaseUrl(apiBaseUrl) + '/mcp', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        jsonrpc: '2.0',
+                        id: requestId,
+                        method: 'tools/call',
+                        params: {
+                            name: toolName,
+                            arguments: payload,
+                        },
+                    }),
+                });
+                const json = await response.json();
+                const structuredContent = json?.result?.structuredContent;
+                if (toolName === 'list_transformers' && structuredContent?.success) {
+                    setLastMessage({
+                        data: JSON.stringify({
+                            type: 'PONG',
+                            id: requestId,
+                            timestamp: Date.now(),
+                            content: structuredContent.data,
+                        }),
+                    });
+                }
+                if (json.error) {
+                    toast(json.error.message || 'mcp error');
+                } else if (structuredContent && !structuredContent.success) {
+                    toast(structuredContent.message || 'tool failed');
+                }
+            } catch (e) {
+                toast(e.message || 'request failed');
+            }
+        };
+    }, [apiBaseUrl]);
+
     const connectionStatus = {
         [ReadyState.CONNECTING]: 'Connecting',
         [ReadyState.OPEN]: 'Connected',
@@ -38,17 +115,7 @@ export default function Layout() {
         [ReadyState.CLOSED]: 'var(--w-red-dark)',
         [ReadyState.UNINSTANTIATED]: 'var(--w-yello-dark)',
     }[readyState];
-    useEffect(()=>{
-        document.title = 'swapper';
-        fetch("/wsPort", {
-            method: 'POST'
-        }).then(res=>res.text()).then(port=>{
-            if (parseInt(port) > 0) {
-                setUrlInput('ws://' + window.location.hostname + ':' + port);
-                setSocketUrl('ws://' + window.location.hostname + ':' + port);
-            }
-        })
-    }, [])
+
     return <div>
         <div><Toaster toastOptions={{
             style: {
@@ -66,14 +133,14 @@ export default function Layout() {
                     <Input value={urlInput} className='w-[550px]' defaultValue={defaultUrl} onChange={setUrlInput} aria-label='urlInput'></Input>
                 </div>
                 <div>
-                    <Button onPress={()=>{
-                        if (urlInput.startsWith("ws://") || urlInput.startsWith("wss://"))
-                            setSocketUrl(urlInput)
-                        else 
-                            toast("❗ ws url error")
+                    <Button onPress={() => {
+                        if (urlInput.startsWith("http://") || urlInput.startsWith("https://"))
+                            setApiBaseUrl(urlInput)
+                        else
+                            toast("http url error")
                     }}>Connect</Button>
                 </div>
-                <div>ws status: <Tooltip overlay={<span>{socketUrl}</span>}><Badge style={{ backgroundColor: color }}>{connectionStatus}</Badge></Tooltip></div>
+                <div>http status: <Tooltip overlay={<span>{apiBaseUrl}</span>}><Badge style={{ backgroundColor: color }}>{connectionStatus}</Badge></Tooltip></div>
             </div>
             <WebSocketContext.Provider value={{
                 sendMessage,
@@ -105,4 +172,37 @@ export default function Layout() {
         </div>
 
     </div>
+}
+
+function normalizeBaseUrl(url) {
+    return url.endsWith('/') ? url.slice(0, -1) : url;
+}
+
+function defaultApiBaseUrl() {
+    if (window.location.port && window.location.port !== '8000') {
+        return `${window.location.protocol}//${window.location.hostname}:8000`;
+    }
+    return window.location.origin;
+}
+
+function messageTypeToToolName(type) {
+    const mapping = {
+        WATCH: 'watch',
+        OUTER_WATCH: 'outer_watch',
+        TRACE: 'trace',
+        CHANGE_BODY: 'change_body',
+        CHANGE_RESULT: 'change_result',
+        REPLACE_CLASS: 'replace_class',
+        DECOMPILE: 'decompile',
+        EXEC: 'exec',
+        EVAL: 'eval',
+        DELETE: 'delete_transformer',
+        RESET: 'reset',
+        PING: 'list_transformers',
+    };
+    return mapping[type];
+}
+
+function genRequestId() {
+    return 'ui-' + Date.now() + '-' + Math.random().toString(16).slice(2);
 }

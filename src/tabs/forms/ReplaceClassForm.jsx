@@ -2,7 +2,7 @@ import { Button, Inputfile, Input } from "@sunwu51/camel-ui";
 import { TabPanelItem } from "@/tabs/Common";
 import { useForm } from "@tanstack/react-form";
 import { useWebSocketContext } from "../../layout";
-import { ReadyState } from "react-use-websocket";
+import { ReadyState } from "@/layout";
 import { genTraceId } from "../Common";
 import { useState } from "react";
 import toast from "react-hot-toast";
@@ -27,7 +27,7 @@ export function ReplaceClassForm() {
                 if (!b64) toast('❗ select a file ❗');
                 else sendMessage(JSON.stringify(data))
             } else {
-                toast('❗ ws status invalid')
+                toast('❗ http status invalid')
             }
         },
     })
@@ -96,7 +96,7 @@ export function DecompileForm() {
             if (readyState == ReadyState.OPEN) {
                sendMessage(JSON.stringify(data))
             } else {
-                toast('❗ ws status invalid')
+                toast('❗ http status invalid')
             }
         },
     })

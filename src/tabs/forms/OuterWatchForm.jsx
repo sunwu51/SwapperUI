@@ -2,7 +2,7 @@ import { Button, Input, Radio, RadioGroup } from "@sunwu51/camel-ui";
 import { TabPanelItem, genTraceId } from "@/tabs/Common";
 import { useForm } from '@tanstack/react-form'
 import { useWebSocketContext } from "@/layout";
-import { ReadyState } from "react-use-websocket";
+import { ReadyState } from "@/layout";
 import toast from "react-hot-toast";
 
 export function OuterWatchForm() {
@@ -23,7 +23,7 @@ export function OuterWatchForm() {
             if (readyState == ReadyState.OPEN) {
                 sendMessage(JSON.stringify(data))
             } else {
-                toast('❗ ws status invalid')
+                toast('❗ http status invalid')
             }
         },
     })
