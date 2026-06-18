@@ -1,4 +1,4 @@
-import { Button, Input, Radio, RadioGroup } from "@sunwu51/camel-ui";
+import { Button, Checkbox, Input, Radio, RadioGroup } from "@sunwu51/camel-ui";
 import { TabPanelItem, genTraceId } from "@/tabs/Common";
 import { useForm } from '@tanstack/react-form'
 import { useWebSocketContext } from "@/layout";
@@ -12,6 +12,7 @@ export function OuterWatchForm() {
             printFormat: 1,
             signature: '',
             innerSignature: '',
+            includeNested: true,
         },
         onSubmit: async ({ value }) => {
             const data = {
@@ -86,6 +87,15 @@ export function OuterWatchForm() {
                                 <Radio value={2}>toJson</Radio>
                                 {/* <Radio value={3}>Pretty</Radio> */}
                             </RadioGroup>)}</form.Field>
+                </div>
+                <div className="my-2 ml-[-5px]">
+                    <form.Field name="includeNested">
+                        {(field) => <Checkbox name={field.name}
+                            isSelected={field.state.value}
+                            onBlur={field.handleBlur}
+                            onChange={(v) => field.handleChange(v)}
+                        >include synchronous lambdas and anonymous inner classes</Checkbox>}
+                    </form.Field>
                 </div>
                 <Button type="submit">watch</Button>
             </form>
