@@ -11,7 +11,8 @@ export function TraceFrom() {
         defaultValues: {
             signature: '',
             minCost: 0,
-            ignoreZero: false
+            ignoreZero: false,
+            includeNested: false
         },
         onSubmit: async ({ value }) => {
             const data = {
@@ -85,6 +86,14 @@ export function TraceFrom() {
                             onBlur={field.handleBlur}
                             onChange={(v) => field.handleChange(v)}
                         >ignore sub method cost &lt;= 0mills</Checkbox>}
+                    </form.Field>
+                </div>
+                <div className="my-2 ml-[-5px]">
+                    <form.Field name="includeNested">
+                        {(field) => <Checkbox name={field.name}
+                            onBlur={field.handleBlur}
+                            onChange={(v) => field.handleChange(v)}
+                        >include synchronous lambdas and anonymous inner classes</Checkbox>}
                     </form.Field>
                 </div>
                 <Button type="submit" isDisabled={!form.state.isValid}>trace</Button>
