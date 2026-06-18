@@ -182,7 +182,7 @@ function normalizeBaseUrl(url) {
 }
 
 function defaultApiBaseUrl() {
-    if (window.location.port && window.location.port !== '8000') {
+    if (window.location.port === '5173') {
         return `${window.location.protocol}//${window.location.hostname}:8000`;
     }
     return window.location.origin;

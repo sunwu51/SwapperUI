@@ -13,6 +13,7 @@ export function OuterWatchForm() {
             signature: '',
             innerSignature: '',
             includeNested: true,
+            ognl: '',
         },
         onSubmit: async ({ value }) => {
             const data = {
@@ -95,6 +96,19 @@ export function OuterWatchForm() {
                             onBlur={field.handleBlur}
                             onChange={(v) => field.handleChange(v)}
                         >include synchronous lambdas and anonymous inner classes</Checkbox>}
+                    </form.Field>
+                </div>
+                <div className="my-2">
+                    <form.Field name="ognl">
+                        {(field) => (
+                            <Input className="p-0"
+                                name={field.name}
+                                onBlur={field.handleBlur}
+                                onChange={(v) => field.handleChange(v)}
+                                label="Optional OGNL expression"
+                                placeholder='@w.util.SpringUtils@getSpringBootApplicationContext().getBean("userController").getUserById(1)'
+                            ></Input>
+                        )}
                     </form.Field>
                 </div>
                 <Button type="submit">watch</Button>
