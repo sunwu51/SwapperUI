@@ -10,17 +10,28 @@ export function OuterWatchForm() {
     const form = useForm({
         defaultValues: {
             printFormat: 1,
+            depthForJson: 3,
             signature: '',
             innerSignature: '',
             includeNested: true,
             ognl: '',
+            variables: '',
         },
         onSubmit: async ({ value }) => {
+            const { variables, ...rest } = value;
+            let parsedVariables;
+            try {
+                parsedVariables = parseVariables(variables);
+            } catch (e) {
+                toast('❗ variables should be a JSON object')
+                return;
+            }
             const data = {
                 id: genTraceId(),
                 timestamp: new Date().getTime(),
                 type: "OUTER_WATCH",
-                ...value
+                ...rest,
+                variables: parsedVariables,
             }
             if (readyState == ReadyState.OPEN) {
                 sendMessage(JSON.stringify(data))
@@ -87,7 +98,28 @@ export function OuterWatchForm() {
                                 <Radio value={1}>toString</Radio>
                                 <Radio value={2}>toJson</Radio>
                                 {/* <Radio value={3}>Pretty</Radio> */}
-                            </RadioGroup>)}</form.Field>
+                        </RadioGroup>)}</form.Field>
+                </div>
+                <div className="my-2">
+                    <form.Field name="depthForJson" validators={{
+                        onChange: ({ value }) => isNaN(value) || value <= 0 ? 'Invalid depthForJson' : undefined,
+                    }}>
+                        {(field) => (
+                            <>
+                                <Input className="p-0"
+                                    label="JSON depth"
+                                    type="number"
+                                    defaultValue="3"
+                                    name={field.name}
+                                    onBlur={field.handleBlur}
+                                    onChange={(v) => field.handleChange(parseInt(v))}
+                                ></Input>
+                                {field.state.meta.errors ? (
+                                    <em role="alert" className="text-[var(--w-red)]">{field.state.meta.errors.join(', ')}</em>
+                                ) : null}
+                            </>
+                        )}
+                    </form.Field>
                 </div>
                 <div className="my-2 ml-[-5px]">
                     <form.Field name="includeNested">
@@ -111,9 +143,54 @@ export function OuterWatchForm() {
                         )}
                     </form.Field>
                 </div>
+                <div className="my-2">
+                    <form.Field name="variables" validators={{
+                        onChange: ({ value }) => validateVariables(value),
+                    }}>
+                        {(field) => (
+                            <>
+                                <Input className="p-0"
+                                    name={field.name}
+                                    onBlur={field.handleBlur}
+                                    onChange={(v) => field.handleChange(v)}
+                                    label="Custom OGNL variables(JSON)"
+                                    placeholder='{"result":"#res","saved":"@w.Global@stash(\"last\", #res)"}'
+                                ></Input>
+                                {field.state.meta.errors ? (
+                                    <em role="alert" className="text-[var(--w-red)]">{field.state.meta.errors.join(', ')}</em>
+                                ) : null}
+                            </>
+                        )}
+                    </form.Field>
+                </div>
                 <Button type="submit">watch</Button>
             </form>
         </div>
     </TabPanelItem>
 
+}
+
+function parseVariables(value) {
+    if (!value || !value.trim()) {
+        return undefined;
+    }
+    const parsed = JSON.parse(value);
+    if (!parsed || Array.isArray(parsed) || typeof parsed !== 'object') {
+        throw new Error('variables should be a JSON object');
+    }
+    return parsed;
+}
+
+function validateVariables(value) {
+    if (!value || !value.trim()) {
+        return undefined;
+    }
+    try {
+        const parsed = JSON.parse(value);
+        return parsed && !Array.isArray(parsed) && typeof parsed === 'object'
+            ? undefined
+            : 'variables should be a JSON object';
+    } catch (e) {
+        return 'Invalid JSON object';
+    }
 }

@@ -197,6 +197,7 @@ function messageTypeToToolName(type) {
         CHANGE_RESULT: 'change_result',
         REPLACE_CLASS: 'replace_class',
         DECOMPILE: 'decompile',
+        FIND_SUBCLASSES: 'find_subclasses',
         EXEC: 'exec',
         EVAL: 'eval',
         DELETE: 'delete_transformer',
