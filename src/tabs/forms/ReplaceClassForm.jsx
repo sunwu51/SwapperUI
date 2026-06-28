@@ -159,7 +159,7 @@ export function FindSubclassesForm() {
         },
     })
 
-    return <TabPanelItem title="FindSubclasses">
+    return <TabPanelItem title="FindSubclasses" open={true}>
         <div className="my-4 mx-2">
             <p>Input a loaded class or interface name to find loaded subclasses or implementations</p>
         </div>
