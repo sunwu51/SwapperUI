@@ -84,6 +84,7 @@ export function EvalForm() {
   return <TabPanelItem title="Eval" open={true}>
     <div className="my-4 mx-2">
       <p>If a command starts with &apos;!&apos;, it&apos;s interpreted by the shell; if not, it&apos;s Groovy code.</p>
+      <p>The ClassLoader selector at the top does not apply to Eval. Eval uses the Spring ClassLoader in Spring applications, otherwise the AppClassLoader.</p>
     </div>
     <div className="my-4 mx-2">
       <div className="my-2 text-[1rem]">

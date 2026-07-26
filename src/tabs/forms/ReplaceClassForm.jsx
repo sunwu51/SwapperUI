@@ -138,6 +138,64 @@ export function DecompileForm() {
 
 }
 
+export function FindSubclassesForm() {
+    const { sendMessage, readyState } = useWebSocketContext();
+    const form = useForm({
+        defaultValues: {
+            className: '',
+        },
+        onSubmit: async ({ value }) => {
+            const data = {
+                id: genTraceId(),
+                timestamp: new Date().getTime(),
+                type: "FIND_SUBCLASSES",
+                ...value
+            }
+            if (readyState == ReadyState.OPEN) {
+                sendMessage(JSON.stringify(data))
+            } else {
+                toast('❗ http status invalid')
+            }
+        },
+    })
+
+    return <TabPanelItem title="FindSubclasses" open={true}>
+        <div className="my-4 mx-2">
+            <p>Input a loaded class or interface name to find loaded subclasses or implementations</p>
+        </div>
+        <div className="my-4 mx-2">
+            <form
+                onSubmit={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    form.handleSubmit();
+                }}
+            >
+                <div className="my-2">
+                    <form.Field name="className" validators={{
+                        onChange: ({ value }) => {return !value || value.length == 0 ? 'Invalid class name' : undefined},
+                    }}>
+                        {(field) => (
+                            <>
+                                <Input className="p-0"
+                                    name={field.name}
+                                    onBlur={field.handleBlur}
+                                    onChange={(v) => field.handleChange(v)}
+                                    label="Class or interface name (package.ClassName)"
+                                    placeholder="java.lang.Runnable"
+                                ></Input>
+                                {field.state.meta.errors ? (
+                                    <em role="alert" className="text-[var(--w-red)]">{field.state.meta.errors.join(', ')}</em>
+                                ) : null}
+                            </>)}
+                    </form.Field>
+                </div>
+                <Button type="submit" className="bg-[var(--w-yellow)] hover:bg-[var(--w-yellow-dark)] hover:text-white">find</Button>
+            </form>
+        </div>
+    </TabPanelItem>
+}
+
 function fileToBase64(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();

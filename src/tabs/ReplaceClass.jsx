@@ -1,8 +1,9 @@
-import { DecompileForm, ReplaceClassForm } from "./forms/ReplaceClassForm";
+import { DecompileForm, FindSubclassesForm, ReplaceClassForm } from "./forms/ReplaceClassForm";
 
 export default function ReplaceClass() {
     return <div>
-        <ReplaceClassForm />
         <DecompileForm />
+        <FindSubclassesForm />
+        <ReplaceClassForm />
     </div>
 }
