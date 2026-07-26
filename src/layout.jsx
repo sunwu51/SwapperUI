@@ -1,9 +1,9 @@
-import { Tabs, TabsItem, Badge, Input, Button, Tooltip } from '@sunwu51/camel-ui';
+import { Tabs, TabsItem, Badge, Input, Button, Tooltip, Select } from '@sunwu51/camel-ui';
 import Watch from './tabs/Watch';
 import ChangeBody from './tabs/ChangeBody';
 import Execute from './tabs/Execute';
 import ReplaceClass from './tabs/ReplaceClass';
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import LogContent from './logs/LogContent';
 import toast, { Toaster } from 'react-hot-toast';
 
@@ -27,6 +27,8 @@ export default function Layout() {
     const [urlInput, setUrlInput] = useState(defaultUrl);
     const [lastMessage, setLastMessage] = useState(null);
     const [readyState, setReadyState] = useState(ReadyState.CONNECTING);
+    const [classLoaders, setClassLoaders] = useState([]);
+    const [classLoaderHash, setClassLoaderHash] = useState('');
 
     useEffect(() => {
         document.title = 'swapper';
@@ -49,6 +51,43 @@ export default function Layout() {
         };
     }, [apiBaseUrl]);
 
+    const refreshClassLoaders = useCallback(async () => {
+        const requestId = genRequestId();
+        try {
+            const response = await fetch(normalizeBaseUrl(apiBaseUrl) + '/mcp', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    jsonrpc: '2.0',
+                    id: requestId,
+                    method: 'tools/call',
+                    params: { name: 'list_classloaders', arguments: {} },
+                }),
+            });
+            if (!response.ok) {
+                throw new Error(`request failed: ${response.status}`);
+            }
+            const json = await response.json();
+            const result = json?.result?.structuredContent;
+            if (!result?.success) {
+                throw new Error(result?.message || 'failed to list ClassLoaders');
+            }
+            const loaders = Array.isArray(result.data) ? result.data : [];
+            setClassLoaders(loaders);
+            setClassLoaderHash(current => loaders.some(loader => loader.classLoaderHash === current) ? current : '');
+        } catch (e) {
+            setClassLoaders([]);
+            setClassLoaderHash('');
+            toast(e.message || 'failed to list ClassLoaders');
+        }
+    }, [apiBaseUrl]);
+
+    useEffect(() => {
+        if (readyState === ReadyState.OPEN) {
+            refreshClassLoaders();
+        }
+    }, [readyState, refreshClassLoaders]);
+
     const sendMessage = useMemo(() => {
         return async (message) => {
             let payload;
@@ -60,12 +99,19 @@ export default function Layout() {
             }
 
             const requestId = payload.logId || payload.id || genRequestId();
-            const { id: ignoredId, ...payloadWithoutJsonRpcId } = payload;
-            const argumentsPayload = { ...payloadWithoutJsonRpcId, logId: requestId };
+            const argumentsPayload = { ...payload, logId: requestId };
+            delete argumentsPayload.id;
             const toolName = messageTypeToToolName(payload.type);
             if (!toolName) {
                 toast(`unsupported message type: ${payload.type}`);
                 return null;
+            }
+            if (CLASS_TARGET_MESSAGE_TYPES.has(payload.type)) {
+                if (classLoaderHash) {
+                    argumentsPayload.classLoaderHash = classLoaderHash;
+                } else {
+                    delete argumentsPayload.classLoaderHash;
+                }
             }
 
             try {
@@ -102,7 +148,14 @@ export default function Layout() {
                 return null;
             }
         };
-    }, [apiBaseUrl]);
+    }, [apiBaseUrl, classLoaderHash]);
+
+    const classLoaderOptions = useMemo(() => [
+        'ignore (auto-detect)',
+        ...classLoaders.map(loader => `${loader.classLoaderName} [${loader.classLoaderHash}] (${loader.classCount} classes)`),
+    ], [classLoaders]);
+    const classLoaderDefaultIndex = Math.max(0,
+        classLoaders.findIndex(loader => loader.classLoaderHash === classLoaderHash) + 1);
 
     const connectionStatus = {
         [ReadyState.CONNECTING]: 'Connecting',
@@ -127,7 +180,11 @@ export default function Layout() {
                 fontWeight: 'bold',
                 color: 'var(--w-black)',
                 backgroundColor: "var(--w-orange)",
-                minWidth: '300px'
+                minWidth: 'min(320px, calc(100vw - 32px))',
+                maxWidth: 'min(640px, calc(100vw - 32px))',
+                whiteSpace: 'pre-line',
+                overflowWrap: 'anywhere',
+                lineHeight: 1.45,
             },
         }} /></div>
         <div>
@@ -150,6 +207,19 @@ export default function Layout() {
                 lastMessage,
                 readyState,
             }}>
+                <div className='mx-2 flex items-end gap-3'>
+                    <div>
+                        <div className='mb-1 text-sm font-semibold'>ClassLoader for class-target operations</div>
+                        <Select key={classLoaderOptions.join('|')} items={classLoaderOptions}
+                            className='w-[650px]' defaultIndex={classLoaderDefaultIndex}
+                            onSelectedItemChange={(event) => {
+                                const index = classLoaderOptions.indexOf(event.selectedItem);
+                                setClassLoaderHash(index <= 0 ? '' : classLoaders[index - 1].classLoaderHash);
+                            }}>
+                        </Select>
+                    </div>
+                    <Button onPress={refreshClassLoaders}>Refresh ClassLoaders</Button>
+                </div>
                 <div className='flex flex-row p-2'>
                     <div>
                         <Tabs className='min-w-[700px] max-w-[800px] w-[50vw]' tabPanelClassName='min-h-[84vh]'>
@@ -176,6 +246,16 @@ export default function Layout() {
 
     </div>
 }
+
+const CLASS_TARGET_MESSAGE_TYPES = new Set([
+    'WATCH',
+    'OUTER_WATCH',
+    'TRACE',
+    'CHANGE_BODY',
+    'CHANGE_RESULT',
+    'REPLACE_CLASS',
+    'DECOMPILE',
+]);
 
 function normalizeBaseUrl(url) {
     return url.endsWith('/') ? url.slice(0, -1) : url;
