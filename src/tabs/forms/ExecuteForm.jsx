@@ -3,8 +3,7 @@ import { TabPanelItem } from "@/tabs/Common";
 import { Editor } from "@monaco-editor/react";
 import { useState } from "react";
 import { genTraceId } from "../Common";
-import { useWebSocketContext } from "../../layout";
-import { ReadyState } from "@/layout";
+import { ReadyState, useWebSocketContext } from "@/webSocketContext";
 import toast from "react-hot-toast";
 
 const defultExecCode = `package w;

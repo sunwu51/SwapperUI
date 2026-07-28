@@ -1,8 +1,7 @@
 import { Button,  Checkbox,  Input } from "@sunwu51/camel-ui";
 import { TabPanelItem, genTraceId } from "@/tabs/Common";
 import { useForm } from '@tanstack/react-form'
-import { useWebSocketContext } from "@/layout";
-import { ReadyState } from "@/layout";
+import { ReadyState, useWebSocketContext } from "@/webSocketContext";
 import toast from "react-hot-toast";
 
 export function TraceFrom() {

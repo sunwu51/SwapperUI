@@ -3,8 +3,7 @@ import { TabPanelItem } from "@/tabs/Common";
 import { Editor } from "@monaco-editor/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { genTraceId } from "../Common";
-import { useWebSocketContext } from "../../layout";
-import { ReadyState } from "@/layout";
+import { ReadyState, useWebSocketContext } from "@/webSocketContext";
 import toast from "react-hot-toast";
 
 export function EvalForm() {
@@ -40,7 +39,7 @@ export function EvalForm() {
     } else {
       toast('❗ http status invalid')
     }
-  }, [code, readyState, sendMessage])
+  }, [cmdHis, code, readyState, sendMessage])
 
   useEffect(() => {
     if (editorRef.current != null) {
@@ -75,7 +74,7 @@ export function EvalForm() {
         }
       });
     }
-  }, [submit]);
+  }, [cmdHis, hisPos, submit]);
 
   const handleEditorDidMount = (editor) => {
     editorRef.current = editor

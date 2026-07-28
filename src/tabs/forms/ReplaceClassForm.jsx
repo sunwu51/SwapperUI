@@ -1,8 +1,7 @@
 import { Button, Inputfile, Input } from "@sunwu51/camel-ui";
 import { TabPanelItem } from "@/tabs/Common";
 import { useForm } from "@tanstack/react-form";
-import { useWebSocketContext } from "../../layout";
-import { ReadyState } from "@/layout";
+import { ReadyState, useWebSocketContext } from "@/webSocketContext";
 import { genTraceId } from "../Common";
 import { useState } from "react";
 import toast from "react-hot-toast";

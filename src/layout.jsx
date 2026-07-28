@@ -3,23 +3,11 @@ import Watch from './tabs/Watch';
 import ChangeBody from './tabs/ChangeBody';
 import Execute from './tabs/Execute';
 import ReplaceClass from './tabs/ReplaceClass';
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import LogContent from './logs/LogContent';
 import toast, { Toaster } from 'react-hot-toast';
-
-export const ReadyState = {
-    CONNECTING: 0,
-    OPEN: 1,
-    CLOSING: 2,
-    CLOSED: 3,
-    UNINSTANTIATED: -1,
-};
-
-const WebSocketContext = createContext(null);
-
-export const useWebSocketContext = () => {
-    return useContext(WebSocketContext);
-};
+import DebugWorkspace from './debug/DebugWorkspace';
+import { ReadyState, WebSocketContext } from './webSocketContext';
 
 export default function Layout() {
     const defaultUrl = defaultApiBaseUrl();
@@ -29,6 +17,8 @@ export default function Layout() {
     const [readyState, setReadyState] = useState(ReadyState.CONNECTING);
     const [classLoaders, setClassLoaders] = useState([]);
     const [classLoaderHash, setClassLoaderHash] = useState('');
+    const [workspace, setWorkspace] = useState('tools');
+    const workspaceTabRefs = useRef([]);
 
     useEffect(() => {
         document.title = 'swapper';
@@ -87,6 +77,37 @@ export default function Layout() {
             refreshClassLoaders();
         }
     }, [readyState, refreshClassLoaders]);
+
+    const callTool = useCallback(async (toolName, args = {}) => {
+        const requestId = genRequestId();
+        try {
+            const response = await fetch(normalizeBaseUrl(apiBaseUrl) + '/mcp', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    jsonrpc: '2.0',
+                    id: requestId,
+                    method: 'tools/call',
+                    params: { name: toolName, arguments: args },
+                }),
+            });
+            if (!response.ok) {
+                throw new Error(await response.text() || `request failed: ${response.status}`);
+            }
+            const json = await response.json();
+            const content = json?.result?.structuredContent;
+            if (json.error) {
+                throw new Error(json.error.message || 'mcp error');
+            }
+            if (content && !content.success) {
+                throw new Error(content.message || 'tool failed');
+            }
+            return content;
+        } catch (error) {
+            toast(error.message || 'request failed');
+            return null;
+        }
+    }, [apiBaseUrl]);
 
     const sendMessage = useMemo(() => {
         return async (message) => {
@@ -172,6 +193,19 @@ export default function Layout() {
         [ReadyState.UNINSTANTIATED]: 'var(--w-yello-dark)',
     }[readyState];
 
+    const handleWorkspaceKeyDown = (event, index) => {
+        const lastIndex = workspaceTabRefs.current.length - 1;
+        let nextIndex = index;
+        if (event.key === 'ArrowRight') nextIndex = index === lastIndex ? 0 : index + 1;
+        else if (event.key === 'ArrowLeft') nextIndex = index === 0 ? lastIndex : index - 1;
+        else if (event.key === 'Home') nextIndex = 0;
+        else if (event.key === 'End') nextIndex = lastIndex;
+        else return;
+        event.preventDefault();
+        setWorkspace(nextIndex === 0 ? 'tools' : 'debug');
+        workspaceTabRefs.current[nextIndex]?.focus();
+    };
+
     return <div>
         <div><Toaster toastOptions={{
             style: {
@@ -204,10 +238,11 @@ export default function Layout() {
             </div>
             <WebSocketContext.Provider value={{
                 sendMessage,
+                callTool,
                 lastMessage,
                 readyState,
             }}>
-                <div className='mx-2 flex items-end gap-3'>
+                {workspace === 'tools' && <div className='mx-2 flex items-end gap-3'>
                     <div>
                         <div className='mb-1 text-sm font-semibold'>ClassLoader for class-target operations</div>
                         <Select key={classLoaderOptions.join('|')} items={classLoaderOptions}
@@ -219,8 +254,33 @@ export default function Layout() {
                         </Select>
                     </div>
                     <Button onPress={refreshClassLoaders}>Refresh ClassLoaders</Button>
+                </div>}
+                <div className='mx-2 mt-3 flex gap-1 border-b border-slate-300'
+                    role='tablist' aria-label='Workspace'>
+                    <button id='workspace-tab-tools' role='tab'
+                        ref={node => { workspaceTabRefs.current[0] = node; }}
+                        aria-controls='workspace-panel-tools'
+                        aria-selected={workspace === 'tools'}
+                        tabIndex={workspace === 'tools' ? 0 : -1}
+                        className={`border-0 border-b-2 px-3 py-2 font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 ${workspace === 'tools'
+                            ? 'border-blue-700 text-blue-800'
+                            : 'border-transparent text-slate-500 hover:text-blue-800'}`}
+                        onKeyDown={event => handleWorkspaceKeyDown(event, 0)}
+                        onClick={() => setWorkspace('tools')}>Tools</button>
+                    <button id='workspace-tab-debug' role='tab'
+                        ref={node => { workspaceTabRefs.current[1] = node; }}
+                        aria-controls='workspace-panel-debug'
+                        aria-selected={workspace === 'debug'}
+                        tabIndex={workspace === 'debug' ? 0 : -1}
+                        className={`border-0 border-b-2 px-3 py-2 font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 ${workspace === 'debug'
+                            ? 'border-blue-700 text-blue-800'
+                            : 'border-transparent text-slate-500 hover:text-blue-800'}`}
+                        onKeyDown={event => handleWorkspaceKeyDown(event, 1)}
+                        onClick={() => setWorkspace('debug')}>Online Debug</button>
                 </div>
-                <div className='flex flex-row p-2'>
+                {workspace === 'tools' ? <div id='workspace-panel-tools'
+                    role='tabpanel' aria-labelledby='workspace-tab-tools'
+                    className='flex flex-row p-2'>
                     <div>
                         <Tabs className='min-w-[700px] max-w-[800px] w-[50vw]' tabPanelClassName='min-h-[84vh]'>
                             <TabsItem title='Watch'>
@@ -240,7 +300,10 @@ export default function Layout() {
                     <div className='flex-1 min-w-[700px]'>
                         <LogContent />
                     </div>
-                </div>
+                    </div> : <div id='workspace-panel-debug'
+                    role='tabpanel' aria-labelledby='workspace-tab-debug'>
+                    <DebugWorkspace visible={workspace === 'debug'} />
+                </div>}
             </WebSocketContext.Provider>
         </div>
 

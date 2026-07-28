@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useWebSocketContext } from "@/layout";
+import { useWebSocketContext } from "@/webSocketContext";
 import { Editor } from "@monaco-editor/react";
 import { Button, Card, Dialog, Select } from "@sunwu51/camel-ui";
 import moment from "moment";
@@ -133,6 +133,9 @@ function normalizeLogMessage(data) {
             timestamp: msg.timestamp || Date.now(),
             content: msg.content == null ? '' : String(msg.content),
         };
+    }
+    if (msg.type === 'DEBUG_BREAKPOINT' || msg.type === 'DEBUG_HIT') {
+        return null;
     }
     if (msg.result?.structuredContent != null) {
         return {
