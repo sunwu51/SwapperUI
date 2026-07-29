@@ -106,7 +106,7 @@ export default function Layout() {
                 toast(`unsupported message type: ${payload.type}`);
                 return null;
             }
-            if (CLASS_TARGET_MESSAGE_TYPES.has(payload.type)) {
+            if (CLASS_LOADER_MESSAGE_TYPES.has(payload.type)) {
                 if (classLoaderHash) {
                     argumentsPayload.classLoaderHash = classLoaderHash;
                 } else {
@@ -209,7 +209,7 @@ export default function Layout() {
             }}>
                 <div className='mx-2 flex items-end gap-3'>
                     <div>
-                        <div className='mb-1 text-sm font-semibold'>ClassLoader for class-target operations</div>
+                        <div className='mb-1 text-sm font-semibold'>ClassLoader for class-target, Exec, and Eval operations</div>
                         <Select key={classLoaderOptions.join('|')} items={classLoaderOptions}
                             className='w-[650px]' defaultIndex={classLoaderDefaultIndex}
                             onSelectedItemChange={(event) => {
@@ -247,7 +247,7 @@ export default function Layout() {
     </div>
 }
 
-const CLASS_TARGET_MESSAGE_TYPES = new Set([
+const CLASS_LOADER_MESSAGE_TYPES = new Set([
     'WATCH',
     'OUTER_WATCH',
     'TRACE',
@@ -255,6 +255,8 @@ const CLASS_TARGET_MESSAGE_TYPES = new Set([
     'CHANGE_RESULT',
     'REPLACE_CLASS',
     'DECOMPILE',
+    'EXEC',
+    'EVAL',
 ]);
 
 function normalizeBaseUrl(url) {

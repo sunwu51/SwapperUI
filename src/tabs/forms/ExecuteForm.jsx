@@ -57,7 +57,7 @@ export function ExecuteForm() {
     return <TabPanelItem title="Execute" open={true}>
         <div className="my-4 mx-2">
             <p>Use a new Thread to run some code.</p>
-            <p>The ClassLoader selector at the top does not apply to Exec. Exec uses the Spring ClassLoader in Spring applications, otherwise the AppClassLoader.</p>
+            <p>Exec compiles and runs against the ClassLoader selected at the top. Auto-detect uses the current default application ClassLoader.</p>
         </div>
 
         <div className="my-4 mx-2">
