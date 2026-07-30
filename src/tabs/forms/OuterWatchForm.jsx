@@ -14,6 +14,7 @@ export function OuterWatchForm() {
             signature: '',
             innerSignature: '',
             includeNested: true,
+            printLvt: false,
             ognl: '',
             variables: '',
         },
@@ -128,6 +129,15 @@ export function OuterWatchForm() {
                             onBlur={field.handleBlur}
                             onChange={(v) => field.handleChange(v)}
                         >include synchronous lambdas and anonymous inner classes</Checkbox>}
+                    </form.Field>
+                </div>
+                <div className="my-2 ml-[-5px]">
+                    <form.Field name="printLvt">
+                        {(field) => <Checkbox name={field.name}
+                            isSelected={field.state.value}
+                            onBlur={field.handleBlur}
+                            onChange={(v) => field.handleChange(v)}
+                        >print local variables from LVT</Checkbox>}
                     </form.Field>
                 </div>
                 <div className="my-2">
