@@ -29,10 +29,22 @@ export default function Layout() {
     const [readyState, setReadyState] = useState(ReadyState.CONNECTING);
     const [classLoaders, setClassLoaders] = useState([]);
     const [classLoaderHash, setClassLoaderHash] = useState('');
+    const [pageZoom, setPageZoom] = useState(() => {
+        const savedZoom = Number(window.localStorage.getItem('swapper-page-zoom'));
+        return savedZoom >= 0.7 && savedZoom <= 1 ? savedZoom : 1;
+    });
 
     useEffect(() => {
         document.title = 'swapper';
     }, []);
+
+    useEffect(() => {
+        document.documentElement.style.zoom = pageZoom;
+        window.localStorage.setItem('swapper-page-zoom', String(pageZoom));
+        return () => {
+            document.documentElement.style.zoom = '';
+        };
+    }, [pageZoom]);
 
     useEffect(() => {
         setReadyState(ReadyState.CONNECTING);
@@ -173,7 +185,7 @@ export default function Layout() {
     }[readyState];
 
     return <div>
-        <div><Toaster toastOptions={{
+        <div><Toaster containerStyle={{ zIndex: 11000 }} toastOptions={{
             style: {
                 boxShadow: 'var(--w-box-shadow)',
                 border: '1px solid var(--w-black)',
@@ -188,7 +200,7 @@ export default function Layout() {
             },
         }} /></div>
         <div>
-            <div className='m-2 flex items-end gap-3'>
+            <div className='m-2 flex flex-wrap items-end gap-3'>
                 <div>
                     <Input value={urlInput} className='w-[550px]' defaultValue={defaultUrl} onChange={setUrlInput} aria-label='urlInput'></Input>
                 </div>
@@ -201,6 +213,15 @@ export default function Layout() {
                     }}>Connect</Button>
                 </div>
                 <div>http status: <Tooltip overlay={<span>{apiBaseUrl}</span>}><Badge style={{ backgroundColor: color }}>{connectionStatus}</Badge></Tooltip></div>
+                <label className='ml-auto flex items-center gap-2 text-sm font-semibold' htmlFor='page-zoom'>
+                    <span>Page zoom</span>
+                    <input id='page-zoom' type='range' min='0.7' max='1' step='0.05'
+                        value={pageZoom} onChange={(event) => setPageZoom(Number(event.target.value))}
+                        className='w-32 cursor-pointer accent-[var(--w-blue-dark)]' />
+                    <output className='w-10 text-right tabular-nums' htmlFor='page-zoom'>
+                        {Math.round(pageZoom * 100)}%
+                    </output>
+                </label>
             </div>
             <WebSocketContext.Provider value={{
                 sendMessage,
