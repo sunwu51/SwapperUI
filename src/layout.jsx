@@ -173,7 +173,7 @@ export default function Layout() {
     }[readyState];
 
     return <div>
-        <div><Toaster toastOptions={{
+        <div><Toaster containerStyle={{ zIndex: 11000 }} toastOptions={{
             style: {
                 boxShadow: 'var(--w-box-shadow)',
                 border: '1px solid var(--w-black)',
