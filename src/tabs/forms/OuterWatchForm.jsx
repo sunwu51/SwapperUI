@@ -16,6 +16,8 @@ export function OuterWatchForm() {
     const [inspectLoading, setInspectLoading] = useState(false);
     const [decompileResult, setDecompileResult] = useState(null);
     const [selectedInvocation, setSelectedInvocation] = useState(null);
+    const [inspectWidth, setInspectWidth] = useState(null);
+    const [inspectResizing, setInspectResizing] = useState(false);
     const editorRef = useRef(null);
     const decorationsRef = useRef([]);
     const invocationTargetsRef = useRef([]);
@@ -86,6 +88,30 @@ export function OuterWatchForm() {
     useEffect(() => {
         decorateInvocations(editorRef.current, selectedInvocation);
     }, [decorateInvocations, selectedInvocation]);
+    useEffect(() => {
+        if (!inspectResizing) return undefined;
+        const previousCursor = document.body.style.cursor;
+        const previousUserSelect = document.body.style.userSelect;
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+        const resize = (event) => {
+            const viewportPadding = 16;
+            const maximumWidth = window.innerWidth - (viewportPadding * 2);
+            const minimumWidth = Math.min(720, maximumWidth);
+            setInspectWidth(Math.max(minimumWidth, Math.min(maximumWidth, window.innerWidth - viewportPadding - event.clientX)));
+        };
+        const stopResizing = () => setInspectResizing(false);
+        window.addEventListener('pointermove', resize);
+        window.addEventListener('pointerup', stopResizing, { once: true });
+        window.addEventListener('pointercancel', stopResizing, { once: true });
+        return () => {
+            window.removeEventListener('pointermove', resize);
+            window.removeEventListener('pointerup', stopResizing);
+            window.removeEventListener('pointercancel', stopResizing);
+            document.body.style.cursor = previousCursor;
+            document.body.style.userSelect = previousUserSelect;
+        };
+    }, [inspectResizing]);
 
     const decompileClass = async () => {
         const className = inspectClassName.trim();
@@ -317,8 +343,15 @@ export function OuterWatchForm() {
                 </div>
             </div>
         </div>, document.body)}
-        {inspectOpen && decompileResult && createPortal(<div className="fixed bottom-4 right-4 top-4 z-[10000] w-[min(76vw,1280px)] min-w-[720px] overflow-hidden border border-gray-400 bg-white shadow-2xl"
+        {inspectOpen && decompileResult && createPortal(<div className="fixed bottom-4 right-4 top-4 z-[10000] min-w-[min(720px,calc(100vw-2rem))] max-w-[calc(100vw-2rem)] overflow-hidden border border-gray-400 bg-white shadow-2xl"
+            style={{ width: inspectWidth ? `${inspectWidth}px` : 'min(68.4vw, 1152px)' }}
             role="dialog" aria-modal="false" aria-labelledby="inspect-calls-title">
+            <div className="absolute bottom-0 left-0 top-0 z-10 w-2 -translate-x-1/2 cursor-col-resize touch-none"
+                role="separator" aria-label="Resize inspect calls panel" aria-orientation="vertical"
+                title="Drag to resize" onPointerDown={(event) => {
+                    event.preventDefault();
+                    setInspectResizing(true);
+                }} />
             <div className="flex h-14 items-center justify-between gap-4 border-b border-gray-300 bg-white px-4">
                 <div className="min-w-0">
                     <h2 id="inspect-calls-title" className="font-semibold">Inspect calls</h2>
