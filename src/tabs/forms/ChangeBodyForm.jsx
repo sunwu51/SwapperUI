@@ -16,7 +16,7 @@ export function ChangeBodyForm() {
     const [code, setCode] = useState(defaultChangeBodyCode);
     const form = useForm({
         defaultValues: {
-            mode: 0,
+            mode: 1,
             signature: '',
             paramTypes: '',
             body: code
@@ -29,6 +29,7 @@ export function ChangeBodyForm() {
                 className: value.signature.split("#")[0],
                 method: value.signature.split("#")[1],
                 body: code,
+                mode: value.mode,
                 paramTypes: value.paramTypes.split(",").map(it => it.trim())
                     .filter(it => it.length !== 0)
             }
