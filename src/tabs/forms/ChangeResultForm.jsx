@@ -1,4 +1,4 @@
-import { Button, Input, Radio, RadioGroup } from "@sunwu51/camel-ui";
+import { Button, Checkbox, Input, Radio, RadioGroup } from "@sunwu51/camel-ui";
 import { TabPanelItem, genTraceId } from "@/tabs/Common";
 import { useForm } from '@tanstack/react-form'
 import { useWebSocketContext } from "@/layout";
@@ -21,6 +21,7 @@ export function ChangeResultForm() {
             signature: '',
             innerSignature: '',
             paramTypes: '',
+            includeNested: true,
         },
         onSubmit: async ({ value }) => {
             const data = {
@@ -34,6 +35,7 @@ export function ChangeResultForm() {
                 innerClassName: value.innerSignature.split("#")[0],
                 innerMethod: value.innerSignature.split("#")[1],
                 mode: value.mode,
+                includeNested: value.includeNested,
                 body: code  ,
 
             }
@@ -118,6 +120,15 @@ export function ChangeResultForm() {
                                 <Radio value={0}>Javassist</Radio>
                                 <Radio value={1}>ASM</Radio>
                             </RadioGroup>)}</form.Field>
+                </div>
+                <div className="my-2 ml-[-5px]">
+                    <form.Field name="includeNested">
+                        {(field) => <Checkbox name={field.name}
+                            isSelected={field.state.value}
+                            onBlur={field.handleBlur}
+                            onChange={(v) => field.handleChange(v)}
+                        >include synchronous lambdas and anonymous inner classes</Checkbox>}
+                    </form.Field>
                 </div>
                 <div className="my-2">
                     <Editor height="200px" defaultLanguage="java"
