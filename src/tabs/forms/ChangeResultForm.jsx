@@ -17,7 +17,7 @@ export function ChangeResultForm() {
     const [code, setCode] = useState(defultCode);
     const form = useForm({
         defaultValues: {
-            mode: 0,
+            mode: 1,
             signature: '',
             innerSignature: '',
             paramTypes: '',
